@@ -11,6 +11,6 @@ export type {
   DiscoveredTool,
   ExtToServerMessage,
   ServerToExtMessage,
-} from "@anthropic/ai-inspector-types";
+} from "@tech-sumit/ai-inspector-types";
 
-export { CdpToolSource } from "@anthropic/webmcp-cdp";
+export { CdpToolSource } from "@tech-sumit/webmcp-cdp";

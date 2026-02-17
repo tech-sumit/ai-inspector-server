@@ -5,7 +5,7 @@ import type {
   DiscoveredTool,
   ExtToServerMessage,
   ServerToExtMessage,
-} from "@anthropic/ai-inspector-types";
+} from "@tech-sumit/ai-inspector-types";
 
 /**
  * ToolSource that receives tools from the AI Inspector Chrome extension

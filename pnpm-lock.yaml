@@ -8,15 +8,15 @@ importers:
 
   .:
     dependencies:
-      '@anthropic/ai-inspector-types':
-        specifier: file:../ai-inspector-types
-        version: file:../ai-inspector-types
-      '@anthropic/webmcp-cdp':
-        specifier: file:../webmcp-cdp
-        version: file:../webmcp-cdp
       '@modelcontextprotocol/sdk':
         specifier: ^1.12.1
         version: 1.26.0(zod@4.3.6)
+      '@tech-sumit/ai-inspector-types':
+        specifier: file:../ai-inspector-types
+        version: file:../ai-inspector-types
+      '@tech-sumit/webmcp-cdp':
+        specifier: file:../webmcp-cdp
+        version: file:../webmcp-cdp
       commander:
         specifier: ^13.0.0
         version: 13.1.0
@@ -50,12 +50,6 @@ importers:
         version: 3.2.4(@types/node@25.2.3)
 
 packages:
-
-  '@anthropic/ai-inspector-types@file:../ai-inspector-types':
-    resolution: {directory: ../ai-inspector-types, type: directory}
-
-  '@anthropic/webmcp-cdp@file:../webmcp-cdp':
-    resolution: {directory: ../webmcp-cdp, type: directory}
 
   '@esbuild/aix-ppc64@0.27.3':
     resolution: {integrity: sha512-9fJMTNFTWZMh5qwrBItuziu834eOCUcEqymSH7pY+zoMVEZg3gcPuBNxH1EvfVYe9h0x/Ptw8KBzv7qxb7l8dg==}
@@ -420,6 +414,12 @@ packages:
     resolution: {integrity: sha512-mxRFDdHIWRxg3UfIIAwCm6NzvxG0jDX/wBN6KsQFTvKFqqg9vTrWUE68qEjHt19A5wwx5X5aUi2zuZT7YR0jrA==}
     cpu: [x64]
     os: [win32]
+
+  '@tech-sumit/ai-inspector-types@file:../ai-inspector-types':
+    resolution: {directory: ../ai-inspector-types, type: directory}
+
+  '@tech-sumit/webmcp-cdp@file:../webmcp-cdp':
+    resolution: {directory: ../webmcp-cdp, type: directory}
 
   '@types/body-parser@1.19.6':
     resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
@@ -1457,16 +1457,6 @@ packages:
 
 snapshots:
 
-  '@anthropic/ai-inspector-types@file:../ai-inspector-types': {}
-
-  '@anthropic/webmcp-cdp@file:../webmcp-cdp':
-    dependencies:
-      '@anthropic/ai-inspector-types': file:../ai-inspector-types
-      chrome-remote-interface: 0.34.0
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-
   '@esbuild/aix-ppc64@0.27.3':
     optional: true
 
@@ -1716,6 +1706,16 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.57.1':
     optional: true
+
+  '@tech-sumit/ai-inspector-types@file:../ai-inspector-types': {}
+
+  '@tech-sumit/webmcp-cdp@file:../webmcp-cdp':
+    dependencies:
+      '@tech-sumit/ai-inspector-types': file:../ai-inspector-types
+      chrome-remote-interface: 0.34.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
 
   '@types/body-parser@1.19.6':
     dependencies:

@@ -1,4 +1,4 @@
-# @anthropic/ai-inspector-server
+# @tech-sumit/ai-inspector-server
 
 MCP server that bridges browser WebMCP tools to desktop MCP clients (Cursor, Claude Desktop, etc.).
 
@@ -26,10 +26,10 @@ Browser tabs with WebMCP tools
 chrome --remote-debugging-port=9222 --enable-features=WebMCPTesting
 
 # Start the server
-npx @anthropic/ai-inspector-server start
+npx @tech-sumit/ai-inspector-server start
 
 # Configure your MCP client
-npx @anthropic/ai-inspector-server config cursor
+npx @tech-sumit/ai-inspector-server config cursor
 ```
 
 ## CLI

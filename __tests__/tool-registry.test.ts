@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ToolRegistry } from "../src/tool-registry.js";
-import type { ToolSource, DiscoveredTool } from "@anthropic/ai-inspector-types";
+import type { ToolSource, DiscoveredTool } from "@tech-sumit/ai-inspector-types";
 
 function mockSource(overrides?: Partial<ToolSource>): ToolSource {
   return {

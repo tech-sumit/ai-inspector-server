@@ -1,4 +1,4 @@
-import type { DiscoveredTool, ToolSource } from "@anthropic/ai-inspector-types";
+import type { DiscoveredTool, ToolSource } from "@tech-sumit/ai-inspector-types";
 
 interface RegistryEntry {
   tool: DiscoveredTool;

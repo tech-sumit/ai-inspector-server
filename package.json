@@ -1,5 +1,5 @@
 {
-  "name": "@anthropic/ai-inspector-server",
+  "name": "@tech-sumit/ai-inspector-server",
   "version": "0.1.0",
   "description": "MCP server bridging browser WebMCP tools to desktop MCP clients",
   "type": "module",
@@ -34,8 +34,8 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@anthropic/ai-inspector-types": "file:../ai-inspector-types",
-    "@anthropic/webmcp-cdp": "file:../webmcp-cdp",
+    "@tech-sumit/ai-inspector-types": "file:../ai-inspector-types",
+    "@tech-sumit/webmcp-cdp": "file:../webmcp-cdp",
     "@modelcontextprotocol/sdk": "^1.12.1",
     "commander": "^13.0.0",
     "express": "^5.1.0",

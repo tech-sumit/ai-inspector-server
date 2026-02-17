@@ -9,7 +9,7 @@ globs: ["**/*.ts"]
 - MCP server must JSON.parse DOMString inputSchema before sending to MCP clients.
 - MCP server must JSON.stringify MCP arguments before calling WebMCP tools.
 - ExtensionToolSource uses WebSocket server to accept connections from the extension.
-- CdpToolSource is imported from @anthropic/webmcp-cdp.
+- CdpToolSource is imported from @tech-sumit/webmcp-cdp.
 - HTTP transport uses StreamableHTTPServerTransport on /mcp endpoint.
 - CLI uses commander. All commands are subcommands of `ai-inspector`.
 - The server must handle graceful shutdown (SIGINT, SIGTERM).

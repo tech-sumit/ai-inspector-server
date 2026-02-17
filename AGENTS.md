@@ -15,7 +15,7 @@ MCP server bridging browser WebMCP tools to desktop MCP clients.
 - Server must JSON.stringify arguments when calling WebMCP tools
 
 ## Sources
-- CdpToolSource (from @anthropic/webmcp-cdp) — direct CDP connection to Chrome
+- CdpToolSource (from @tech-sumit/webmcp-cdp) — direct CDP connection to Chrome
 - ExtensionToolSource — WebSocket server that accepts connections from the extension
 
 ## CLI commands

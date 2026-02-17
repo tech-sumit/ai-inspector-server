@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { ToolRegistry } from "../src/tool-registry.js";
 import { createMcpServer } from "../src/mcp-server.js";
-import type { ToolSource, DiscoveredTool } from "@anthropic/ai-inspector-types";
+import type { ToolSource, DiscoveredTool } from "@tech-sumit/ai-inspector-types";
 
 function mockSource(overrides?: Partial<ToolSource>): ToolSource {
   return {

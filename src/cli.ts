@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
-import { CdpToolSource } from "@anthropic/webmcp-cdp";
+import { CdpToolSource } from "@tech-sumit/webmcp-cdp";
 import { ToolRegistry } from "./tool-registry.js";
 import { ExtensionToolSource } from "./sources/extension.js";
 import { createMcpServer } from "./mcp-server.js";
