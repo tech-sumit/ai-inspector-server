@@ -12,8 +12,8 @@ importers:
         specifier: ^1.12.1
         version: 1.26.0(zod@4.3.6)
       '@tech-sumit/ai-inspector-types':
-        specifier: file:../ai-inspector-types
-        version: file:../ai-inspector-types
+        specifier: ^0.2.0
+        version: 0.2.0
       '@tech-sumit/webmcp-cdp':
         specifier: file:../webmcp-cdp
         version: file:../webmcp-cdp
@@ -418,8 +418,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@tech-sumit/ai-inspector-types@file:../ai-inspector-types':
-    resolution: {directory: ../ai-inspector-types, type: directory}
+  '@tech-sumit/ai-inspector-types@0.2.0':
+    resolution: {integrity: sha512-uH+TDYkiceiL383fW5xpM9Fw4aH0ZEgejygdZWalOd/v5Tfb1S0lLPkjoYrGGi+9wuZ9wfBBQdJm7NgZBGz/Nw==}
 
   '@tech-sumit/webmcp-cdp@file:../webmcp-cdp':
     resolution: {directory: ../webmcp-cdp, type: directory}
@@ -1725,11 +1725,11 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.57.1':
     optional: true
 
-  '@tech-sumit/ai-inspector-types@file:../ai-inspector-types': {}
+  '@tech-sumit/ai-inspector-types@0.2.0': {}
 
   '@tech-sumit/webmcp-cdp@file:../webmcp-cdp':
     dependencies:
-      '@tech-sumit/ai-inspector-types': file:../ai-inspector-types
+      '@tech-sumit/ai-inspector-types': 0.2.0
       chrome-remote-interface: 0.34.0
     transitivePeerDependencies:
       - bufferutil
