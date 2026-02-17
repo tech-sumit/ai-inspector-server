@@ -55,6 +55,7 @@ vi.mock("playwright", () => {
   const browser = {
     contexts: vi.fn().mockReturnValue([context]),
     close: vi.fn().mockResolvedValue(undefined),
+    version: vi.fn().mockReturnValue("146.0.6478.0"),
   };
 
   return {
@@ -87,7 +88,9 @@ describe("PlaywrightBrowserSource", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     // Re-set default return values after clearAllMocks
-    const { context, page, locatorInstance } = await getMocks();
+    const { browser, context, page, locatorInstance } = await getMocks();
+    (browser.version as ReturnType<typeof vi.fn>).mockReturnValue("146.0.6478.0");
+    (browser.contexts as ReturnType<typeof vi.fn>).mockReturnValue([context]);
     (context.pages as ReturnType<typeof vi.fn>).mockReturnValue([page]);
     (context.newPage as ReturnType<typeof vi.fn>).mockResolvedValue(page);
     ((page as Record<string, unknown>).url as ReturnType<typeof vi.fn>).mockReturnValue(
@@ -227,6 +230,7 @@ describe("PlaywrightBrowserSource", () => {
     expect(page.screenshot).toHaveBeenCalledWith({
       fullPage: true,
       type: "png",
+      timeout: 10000,
     });
   });
 
