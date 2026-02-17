@@ -1,4 +1,8 @@
-import type { DiscoveredTool, ToolSource } from "@tech-sumit/ai-inspector-types";
+import type {
+  DiscoveredTool,
+  ToolSource,
+  ToolCallResultContent,
+} from "@tech-sumit/ai-inspector-types";
 
 interface RegistryEntry {
   tool: DiscoveredTool;
@@ -57,9 +61,12 @@ export class ToolRegistry {
    *
    * @param name - Tool name
    * @param inputArguments - JSON-encoded input (DOMString per WebMCP spec)
-   * @returns JSON-encoded result, or null
+   * @returns Array of content blocks (text, image, etc.)
    */
-  async callTool(name: string, inputArguments: string): Promise<string | null> {
+  async callTool(
+    name: string,
+    inputArguments: string,
+  ): Promise<ToolCallResultContent[]> {
     const entry = this.entries.get(name);
     if (!entry) {
       throw new Error(

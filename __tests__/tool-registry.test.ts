@@ -7,7 +7,7 @@ function mockSource(overrides?: Partial<ToolSource>): ToolSource {
     connect: vi.fn(),
     disconnect: vi.fn(),
     listTools: vi.fn().mockReturnValue([]),
-    callTool: vi.fn().mockResolvedValue(null),
+    callTool: vi.fn().mockResolvedValue([{ type: "text", text: "null" }]),
     onToolsChanged: vi.fn(),
     ...overrides,
   };
@@ -66,7 +66,9 @@ describe("ToolRegistry", () => {
 
   it("should route callTool to correct source", async () => {
     const source1 = mockSource({
-      callTool: vi.fn().mockResolvedValue('{"flights":[]}'),
+      callTool: vi
+        .fn()
+        .mockResolvedValue([{ type: "text", text: '{"flights":[]}' }]),
     });
     const source2 = mockSource();
 
@@ -74,8 +76,11 @@ describe("ToolRegistry", () => {
     registry.addTools(source2, [tool2]);
 
     const result = await registry.callTool("searchFlights", '{"from":"SFO"}');
-    expect(result).toBe('{"flights":[]}');
-    expect(source1.callTool).toHaveBeenCalledWith("searchFlights", '{"from":"SFO"}');
+    expect(result).toEqual([{ type: "text", text: '{"flights":[]}' }]);
+    expect(source1.callTool).toHaveBeenCalledWith(
+      "searchFlights",
+      '{"from":"SFO"}',
+    );
     expect(source2.callTool).not.toHaveBeenCalled();
   });
 

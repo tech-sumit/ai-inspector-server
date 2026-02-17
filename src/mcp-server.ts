@@ -36,15 +36,13 @@ export function createMcpServer(registry: ToolRegistry): Server {
   }));
 
   server.setRequestHandler(CallToolRequestSchema, async (req) => {
-    const result = await registry.callTool(
+    const content = await registry.callTool(
       req.params.name,
       // MCP sends parsed object; WebMCP expects DOMString
       JSON.stringify(req.params.arguments ?? {}),
     );
 
-    return {
-      content: [{ type: "text" as const, text: result ?? "null" }],
-    };
+    return { content };
   });
 
   // Notify connected MCP clients when tool list changes

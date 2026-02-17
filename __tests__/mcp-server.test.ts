@@ -9,7 +9,9 @@ function mockSource(overrides?: Partial<ToolSource>): ToolSource {
     connect: vi.fn(),
     disconnect: vi.fn(),
     listTools: vi.fn().mockReturnValue([]),
-    callTool: vi.fn().mockResolvedValue('{"result":"ok"}'),
+    callTool: vi
+      .fn()
+      .mockResolvedValue([{ type: "text", text: '{"result":"ok"}' }]),
     onToolsChanged: vi.fn(),
     ...overrides,
   };

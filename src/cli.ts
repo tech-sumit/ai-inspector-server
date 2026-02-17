@@ -4,7 +4,7 @@ import { Command } from "commander";
 import { CdpToolSource } from "@tech-sumit/webmcp-cdp";
 import { ToolRegistry } from "./tool-registry.js";
 import { ExtensionToolSource } from "./sources/extension.js";
-import { createMcpServer } from "./mcp-server.js";
+import { PlaywrightBrowserSource } from "./sources/browser.js";
 import { createHttpServer } from "./http.js";
 import { configureMcpClient } from "./config.js";
 
@@ -21,34 +21,31 @@ program
   .option("--extension", "Enable extension WebSocket bridge")
   .option("--ws-port <port>", "Extension WebSocket port", "8765")
   .option("--port <port>", "HTTP server port", "3100")
-  .option("--no-cdp", "Disable CDP source")
+  .option(
+    "--no-browser-tools",
+    "Disable Playwright browser automation tools",
+  )
   .action(async (opts) => {
     const registry = new ToolRegistry();
+    const cdpHost = opts.cdpHost as string;
+    const cdpPort = parseInt(opts.cdpPort as string, 10);
 
-    // Connect CDP source
-    if (opts.cdp !== false) {
+    // Connect Playwright browser source (browser automation + WebMCP meta-tools)
+    if (opts.browserTools !== false) {
       try {
-        const cdpSource = new CdpToolSource();
-        await cdpSource.connect({
-          host: opts.cdpHost,
-          port: parseInt(opts.cdpPort, 10),
-        });
-
-        const tools = cdpSource.listTools();
-        registry.addTools(cdpSource, tools);
-        cdpSource.onToolsChanged((newTools) =>
-          registry.addTools(cdpSource, newTools),
-        );
+        const browserSource = new PlaywrightBrowserSource();
+        await browserSource.connect({ host: cdpHost, port: cdpPort });
+        registry.addTools(browserSource, browserSource.listTools());
 
         console.log(
-          `[AI Inspector] CDP source connected: ${tools.length} tools from ${opts.cdpHost}:${opts.cdpPort}`,
+          `[AI Inspector] Browser tools enabled: ${browserSource.listTools().length} tools via Playwright`,
         );
       } catch (err) {
         console.warn(
-          `[AI Inspector] CDP source failed to connect: ${err instanceof Error ? err.message : err}`,
+          `[AI Inspector] Browser tools failed to connect: ${err instanceof Error ? err.message : err}`,
         );
         console.warn(
-          "[AI Inspector] Running without CDP source. Use --no-cdp to suppress this.",
+          "[AI Inspector] Running without browser tools. Use --no-browser-tools to suppress this.",
         );
       }
     }
@@ -56,7 +53,9 @@ program
     // Connect extension source
     if (opts.extension) {
       const extSource = new ExtensionToolSource();
-      await extSource.connect({ wsPort: parseInt(opts.wsPort, 10) });
+      await extSource.connect({
+        wsPort: parseInt(opts.wsPort as string, 10),
+      });
       extSource.onToolsChanged((tools) =>
         registry.addTools(extSource, tools),
       );
@@ -65,10 +64,9 @@ program
       );
     }
 
-    // Create and start MCP server
-    const mcpServer = createMcpServer(registry);
-    const httpPort = parseInt(opts.port, 10);
-    createHttpServer(mcpServer, httpPort);
+    // Start HTTP server (creates MCP server per session internally)
+    const httpPort = parseInt(opts.port as string, 10);
+    createHttpServer(registry, httpPort);
 
     // Graceful shutdown
     const shutdown = async () => {
@@ -127,7 +125,13 @@ program
       });
 
       const result = await source.callTool(name, args ?? "{}");
-      console.log(result);
+      for (const block of result) {
+        if (block.type === "text") {
+          console.log(block.text);
+        } else if (block.type === "image") {
+          console.log(`[Image: ${block.mimeType}, ${block.data.length} bytes base64]`);
+        }
+      }
     } finally {
       await source.disconnect();
     }

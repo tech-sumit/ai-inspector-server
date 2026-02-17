@@ -7,12 +7,4 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   splitting: false,
-  banner: ({ format }) => {
-    if (format === "esm") {
-      return {
-        js: "#!/usr/bin/env node",
-      };
-    }
-    return {};
-  },
 });

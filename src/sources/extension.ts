@@ -2,6 +2,7 @@ import { WebSocketServer, type WebSocket } from "ws";
 import type {
   ToolSource,
   ToolSourceConfig,
+  ToolCallResultContent,
   DiscoveredTool,
   ExtToServerMessage,
   ServerToExtMessage,
@@ -68,7 +69,10 @@ export class ExtensionToolSource implements ToolSource {
     return all;
   }
 
-  async callTool(name: string, inputArguments: string): Promise<string | null> {
+  async callTool(
+    name: string,
+    inputArguments: string,
+  ): Promise<ToolCallResultContent[]> {
     if (!this.listTools().some((t) => t.name === name)) {
       throw new Error(`Tool "${name}" not found in extension source`);
     }
@@ -81,7 +85,7 @@ export class ExtensionToolSource implements ToolSource {
       inputArguments,
     };
 
-    return new Promise((resolve, reject) => {
+    const raw: string | null = await new Promise((resolve, reject) => {
       this.pendingCalls.set(callId, { resolve, reject });
       this.broadcast(msg);
 
@@ -93,6 +97,8 @@ export class ExtensionToolSource implements ToolSource {
         }
       }, 30_000);
     });
+
+    return [{ type: "text", text: raw ?? "null" }];
   }
 
   onToolsChanged(cb: (tools: DiscoveredTool[]) => void): void {

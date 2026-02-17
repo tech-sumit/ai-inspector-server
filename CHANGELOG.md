@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.2.0 (2026-02-17)
+
+### Features
+
+- **Playwright browser automation**: New `PlaywrightBrowserSource` providing 25 tools via Playwright connected over CDP
+  - 23 browser automation tools: navigation (`navigate`, `back`, `forward`, `reload`), page state (`url`, `snapshot`, `screenshot`, `console_logs`, `network_requests`), element interaction (`click`, `type`, `fill`, `hover`, `select_option`, `press_key`, `focus`), scrolling (`scroll`), tab management (`tab_list`, `tab_new`, `tab_select`, `tab_close`), JavaScript execution (`evaluate`), and waiting (`wait`)
+  - 2 WebMCP meta-tools: `webmcp_list_tools` and `webmcp_call_tool` for dynamic page tool discovery and execution via `navigator.modelContextTesting`
+  - Element targeting via accessibility tree snapshots with `[ref=N]` markers resolved to Playwright locators
+  - Buffered console log and network request capture
+  - Page event listener management via `WeakSet<Page>` to prevent duplicates
+- **Per-session MCP server**: Each client connection gets its own `MCP Server` + `StreamableHTTPServerTransport` pair, backed by the shared `ToolRegistry`
+- **Chrome version check**: Validates Chrome >= 146 on startup; hard error with download link if too old
+- **WebMCP availability check**: Probes `navigator.modelContextTesting` on startup; warns if not enabled
+- **Stale session handling**: Non-initialize requests with unknown session IDs return HTTP 404 with a clear re-initialize message
+- **Rich tool results**: `ToolRegistry.callTool()` and MCP `CallToolRequestSchema` handler now support `ToolCallResultContent[]` (text + image blocks)
+
+### Bug fixes
+
+- **Screenshot timeout**: Added 10s timeout to `page.screenshot()` to prevent hanging on slow font loading
+- **Modal click fallback**: `browser_click` now uses a two-phase strategy — tries normal click first, falls back to `force: true` for elements in fixed/overlay containers that can't be scrolled into view
+- **"Server already initialized" error**: Fixed by creating per-session MCP server instances instead of a single long-lived server — clients can disconnect and reconnect without errors
+- **Stale session 400 error**: Requests with unknown session IDs now return 404 instead of creating an uninitialized transport that would fail on non-initialize requests
+- **Duplicate shebang**: Removed `banner` option from `tsup.config.ts` that was duplicating `#!/usr/bin/env node` in ESM output
+
+### Documentation
+
+- **Comprehensive README**: Full setup instructions with Mermaid architecture diagrams, prerequisites, step-by-step setup, all 25 tools documented, CLI reference, end-to-end demo walkthrough, troubleshooting decision tree, and session management sequence diagram
+
 ## 0.1.0 (2026-02-17)
 
 ### Features
