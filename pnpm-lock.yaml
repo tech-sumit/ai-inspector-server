@@ -15,8 +15,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
       '@tech-sumit/webmcp-cdp':
-        specifier: file:../webmcp-cdp
-        version: file:../webmcp-cdp
+        specifier: github:tech-sumit/webmcp-cdp
+        version: https://codeload.github.com/tech-sumit/webmcp-cdp/tar.gz/daa7478f54c22386a6fe6a4e97b9bed30c593626
       commander:
         specifier: ^13.0.0
         version: 13.1.0
@@ -427,8 +427,9 @@ packages:
   '@tech-sumit/ai-inspector-types@0.2.0':
     resolution: {integrity: sha512-uH+TDYkiceiL383fW5xpM9Fw4aH0ZEgejygdZWalOd/v5Tfb1S0lLPkjoYrGGi+9wuZ9wfBBQdJm7NgZBGz/Nw==}
 
-  '@tech-sumit/webmcp-cdp@file:../webmcp-cdp':
-    resolution: {directory: ../webmcp-cdp, type: directory}
+  '@tech-sumit/webmcp-cdp@https://codeload.github.com/tech-sumit/webmcp-cdp/tar.gz/daa7478f54c22386a6fe6a4e97b9bed30c593626':
+    resolution: {tarball: https://codeload.github.com/tech-sumit/webmcp-cdp/tar.gz/daa7478f54c22386a6fe6a4e97b9bed30c593626}
+    version: 0.1.0
 
   '@types/body-parser@1.19.6':
     resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
@@ -1818,7 +1819,7 @@ snapshots:
 
   '@tech-sumit/ai-inspector-types@0.2.0': {}
 
-  '@tech-sumit/webmcp-cdp@file:../webmcp-cdp':
+  '@tech-sumit/webmcp-cdp@https://codeload.github.com/tech-sumit/webmcp-cdp/tar.gz/daa7478f54c22386a6fe6a4e97b9bed30c593626':
     dependencies:
       '@tech-sumit/ai-inspector-types': 0.2.0
       chrome-remote-interface: 0.34.0
