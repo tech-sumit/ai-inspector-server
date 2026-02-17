@@ -68,7 +68,7 @@ const META_TOOLS: DiscoveredTool[] = [
 export class WebMCPMetaSource implements ToolSource {
   constructor(private readonly inner: ToolSource) {}
 
-  async connect(_config?: ToolSourceConfig): Promise<void> {
+  async connect(_config?: ToolSourceConfig): Promise<void> { // eslint-disable-line @typescript-eslint/no-unused-vars
     // Connection is managed externally on the inner source
   }
 
@@ -116,7 +116,7 @@ export class WebMCPMetaSource implements ToolSource {
     throw new Error(`Unknown meta tool: ${name}`);
   }
 
-  onToolsChanged(_cb: (tools: DiscoveredTool[]) => void): void {
+  onToolsChanged(_cb: (tools: DiscoveredTool[]) => void): void { // eslint-disable-line @typescript-eslint/no-unused-vars
     // Meta-tools are static — no changes to notify
   }
 }
