@@ -1,8 +1,24 @@
 # @tech-sumit/mcp-webmcp
 
-MCP server that gives AI agents full browser automation and [WebMCP](https://AIdevelopment.blog/web-mcp) tool access. Connects to Chrome via Playwright and exposes 26 tools over the Model Context Protocol.
+[![npm](https://img.shields.io/npm/v/@tech-sumit/mcp-webmcp)](https://www.npmjs.com/package/@tech-sumit/mcp-webmcp)
+
+MCP server that bridges browser [WebMCP](https://AIdevelopment.blog/web-mcp) tools to desktop AI apps. Connects to Chrome via Playwright and exposes 26 browser automation tools + WebMCP meta-tools over the Model Context Protocol.
+
+## Install
+
+```bash
+npm install -g @tech-sumit/mcp-webmcp
+```
+
+Or run directly with npx (no install needed):
+
+```bash
+npx -y @tech-sumit/mcp-webmcp
+```
 
 ## Quick Start
+
+### Option 1: Auto-launch browser on startup (`--launch`)
 
 Add to your MCP client config (`~/.cursor/mcp.json` or Claude Desktop):
 
@@ -17,7 +33,22 @@ Add to your MCP client config (`~/.cursor/mcp.json` or Claude Desktop):
 }
 ```
 
-That's it. The server launches Chrome Beta with WebMCP enabled, connects via stdio, and exposes 26 browser tools to your AI agent. No manual Chrome launch needed.
+The server launches Chrome Beta with WebMCP enabled on startup. All 26 tools are immediately available.
+
+### Option 2: Let the AI agent launch the browser (default)
+
+```json
+{
+  "mcpServers": {
+    "mcp-webmcp": {
+      "command": "npx",
+      "args": ["-y", "@tech-sumit/mcp-webmcp"]
+    }
+  }
+}
+```
+
+Without `--launch`, all 26 tools are registered but no browser is started. The AI agent calls the `browser_launch` tool when it needs a browser. This gives the client full control over when and how the browser is launched.
 
 ## Architecture
 
@@ -53,10 +84,10 @@ graph TD
 
 ### Connection Modes
 
-| Mode | Flag | How it works | When to use |
-|---|---|---|---|
-| **Launch** | `--launch` | Launches a new Chrome window via `chromium.launch()`. Playwright handles OS-specific path resolution (Mac/Linux/Windows). Injects `--enable-features=WebMCPTesting` automatically. | Zero-config setup from mcp.json. No pre-running Chrome needed. |
-| **CDP** | _(default)_ | Connects to an existing Chrome via `chromium.connectOverCDP()`. Requires Chrome running with `--remote-debugging-port=9222`. | When you want to use your existing Chrome with tabs/sessions. |
+| Mode | How it works | When to use |
+|---|---|---|
+| **`--launch` flag** | Launches Chrome on startup via `chromium.launch()`. Injects `--enable-features=WebMCPTesting` automatically. | Zero-config setup. Browser ready immediately. |
+| **`browser_launch` tool** _(default)_ | No browser on startup. AI agent calls `browser_launch` tool when needed. | Agent controls when to open the browser. |
 
 ### Transport Modes
 
@@ -92,88 +123,9 @@ The server validates Chrome >= 146 on startup and will throw a clear error if th
 
 ## Setup
 
-### Option A: Launch mode (recommended)
-
-The server launches its own Chrome instance. No manual Chrome setup needed.
-
-#### Cursor
+### Cursor
 
 Add to `~/.cursor/mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "mcp-webmcp": {
-      "command": "npx",
-      "args": ["-y", "@tech-sumit/mcp-webmcp", "--launch"]
-    }
-  }
-}
-```
-
-Or for local development:
-
-```json
-{
-  "mcpServers": {
-    "mcp-webmcp": {
-      "command": "node",
-      "args": ["/path/to/dist/cli.js", "--launch"]
-    }
-  }
-}
-```
-
-#### Claude Desktop
-
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "mcp-webmcp": {
-      "command": "npx",
-      "args": ["-y", "@tech-sumit/mcp-webmcp", "--launch"]
-    }
-  }
-}
-```
-
-#### Launch options
-
-| Flag | Description | Default |
-|---|---|---|
-| `--launch` | Enable launch mode | _(off, uses CDP)_ |
-| `--channel <ch>` | Browser channel: `chrome`, `chrome-beta`, `chrome-canary`, `msedge`, `msedge-beta`, `msedge-dev` | `chrome-beta` |
-| `--headless` | Run browser in headless mode | `false` |
-| `--url <url>` | Navigate to URL after launch | _(none)_ |
-
-### Option B: CDP mode (connect to existing Chrome)
-
-Attach to an existing Chrome instance with remote debugging enabled.
-
-#### 1. Launch Chrome with flags
-
-```bash
-# macOS — Chrome Beta
-/Applications/Google\ Chrome\ Beta.app/Contents/MacOS/Google\ Chrome\ Beta \
-  --remote-debugging-port=9222 \
-  --enable-features=WebMCPTesting
-
-# Linux
-google-chrome-beta \
-  --remote-debugging-port=9222 \
-  --enable-features=WebMCPTesting
-
-# Windows
-"C:\Program Files\Google\Chrome Beta\Application\chrome.exe" ^
-  --remote-debugging-port=9222 ^
-  --enable-features=WebMCPTesting
-```
-
-> **Tip:** Close all existing Chrome windows before running this command, or Chrome will connect to the existing instance which may not have the flags enabled.
-
-#### 2. Configure MCP client
 
 ```json
 {
@@ -186,14 +138,37 @@ google-chrome-beta \
 }
 ```
 
-#### CDP options
+Add `"--launch"` to `args` if you want Chrome to open on startup.
 
-| Flag | Description | Default |
-|---|---|---|
-| `--cdp-host <host>` | Chrome debugging host | `localhost` |
-| `--cdp-port <port>` | Chrome debugging port | `9222` |
+### Claude Desktop
 
-### Option C: HTTP transport (hosted server)
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "mcp-webmcp": {
+      "command": "npx",
+      "args": ["-y", "@tech-sumit/mcp-webmcp"]
+    }
+  }
+}
+```
+
+### Local development
+
+```json
+{
+  "mcpServers": {
+    "mcp-webmcp": {
+      "command": "node",
+      "args": ["/path/to/dist/cli.js"]
+    }
+  }
+}
+```
+
+### HTTP transport (hosted server)
 
 For manual or hosted usage, run the server as an HTTP endpoint:
 
@@ -209,6 +184,15 @@ Connect your MCP client to `http://localhost:3100/mcp`.
 mcp-webmcp config cursor   # writes ~/.cursor/mcp.json
 mcp-webmcp config claude    # writes Claude Desktop config
 ```
+
+### Options
+
+| Flag | Description | Default |
+|---|---|---|
+| `--launch` | Launch browser on startup (otherwise use `browser_launch` tool) | `false` |
+| `--channel <ch>` | Browser channel: `chrome`, `chrome-beta`, `chrome-canary`, `msedge`, `msedge-beta`, `msedge-dev` | `chrome-beta` |
+| `--headless` | Run browser in headless mode | `false` |
+| `--url <url>` | Navigate to URL after launch | _(none)_ |
 
 ## Available Tools (26)
 
@@ -308,12 +292,10 @@ mcp-webmcp [options]
 
 | Option | Description | Default |
 |---|---|---|
-| `--launch` | Launch a new browser instead of connecting via CDP | `false` |
-| `--channel <ch>` | Browser channel for `--launch` | `chrome-beta` |
+| `--launch` | Launch browser on startup (otherwise use `browser_launch` tool) | `false` |
+| `--channel <ch>` | Browser channel | `chrome-beta` |
 | `--headless` | Launch in headless mode | `false` |
 | `--url <url>` | Initial URL to open | _(none)_ |
-| `--cdp-host <host>` | CDP host (when not using `--launch`) | `localhost` |
-| `--cdp-port <port>` | CDP port (when not using `--launch`) | `9222` |
 | `--extension` | Enable Chrome extension WebSocket bridge | `false` |
 | `--ws-port <port>` | Extension WebSocket port | `8765` |
 | `--no-browser-tools` | Disable Playwright browser tools | `false` |
