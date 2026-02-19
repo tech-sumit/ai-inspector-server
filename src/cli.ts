@@ -31,8 +31,6 @@ async function setupRegistry(opts: {
   channel?: string;
   headless?: boolean;
   url?: string;
-  cdpHost: string;
-  cdpPort: number;
   extension?: boolean;
   wsPort?: number;
 }): Promise<ToolRegistry> {
@@ -84,16 +82,14 @@ const program = new Command()
 
 // ── Default command: stdio mode (for mcp.json / npx usage) ──────────────────
 program
-  .option("--launch", "Launch a new browser instead of connecting via CDP")
+  .option("--launch", "Launch a browser on startup (otherwise use browser_launch tool)")
   .option(
     "--channel <channel>",
-    "Browser channel for --launch (chrome, chrome-beta, chrome-canary, msedge)",
+    "Browser channel (chrome, chrome-beta, chrome-canary, msedge)",
     "chrome-beta",
   )
-  .option("--headless", "Launch browser in headless mode (with --launch)")
+  .option("--headless", "Launch browser in headless mode")
   .option("--url <url>", "Initial URL to open in launched browser")
-  .option("--cdp-host <host>", "CDP host (when not using --launch)", "localhost")
-  .option("--cdp-port <port>", "CDP port (when not using --launch)", "9222")
   .option("--extension", "Enable extension WebSocket bridge")
   .option("--ws-port <port>", "Extension WebSocket port", "8765")
   .option(
@@ -109,8 +105,6 @@ program
       channel: opts.channel as string,
       headless: opts.headless,
       url: opts.url as string | undefined,
-      cdpHost: opts.cdpHost as string,
-      cdpPort: parseInt(opts.cdpPort as string, 10),
       browserTools: opts.browserTools !== false,
       extension: opts.extension,
       wsPort: opts.wsPort ? parseInt(opts.wsPort as string, 10) : undefined,
@@ -131,16 +125,14 @@ program
 program
   .command("start")
   .description("Start the MCP-WebMCP MCP server over HTTP")
-  .option("--launch", "Launch a new browser instead of connecting via CDP")
+  .option("--launch", "Launch a browser on startup (otherwise use browser_launch tool)")
   .option(
     "--channel <channel>",
-    "Browser channel for --launch (chrome, chrome-beta, chrome-canary, msedge)",
+    "Browser channel (chrome, chrome-beta, chrome-canary, msedge)",
     "chrome-beta",
   )
-  .option("--headless", "Launch browser in headless mode (with --launch)")
+  .option("--headless", "Launch browser in headless mode")
   .option("--url <url>", "Initial URL to open in launched browser")
-  .option("--cdp-host <host>", "CDP host (when not using --launch)", "localhost")
-  .option("--cdp-port <port>", "CDP port (when not using --launch)", "9222")
   .option("--extension", "Enable extension WebSocket bridge")
   .option("--ws-port <port>", "Extension WebSocket port", "8765")
   .option("--port <port>", "HTTP server port", "3100")
@@ -154,8 +146,6 @@ program
       channel: opts.channel as string,
       headless: opts.headless,
       url: opts.url as string | undefined,
-      cdpHost: opts.cdpHost as string,
-      cdpPort: parseInt(opts.cdpPort as string, 10),
       browserTools: opts.browserTools !== false,
       extension: opts.extension,
       wsPort: opts.wsPort ? parseInt(opts.wsPort as string, 10) : undefined,
