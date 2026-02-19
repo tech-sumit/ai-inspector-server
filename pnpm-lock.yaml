@@ -12,8 +12,8 @@ importers:
         specifier: ^1.12.1
         version: 1.26.0(zod@4.3.6)
       '@tech-sumit/ai-inspector-types':
-        specifier: ^0.2.0
-        version: 0.2.0
+        specifier: ^0.3.0
+        version: 0.3.0
       '@tech-sumit/webmcp-cdp':
         specifier: github:tech-sumit/webmcp-cdp
         version: https://codeload.github.com/tech-sumit/webmcp-cdp/tar.gz/dcc643a5be50a2b598204b6132821ce66df28c35
@@ -426,6 +426,9 @@ packages:
 
   '@tech-sumit/ai-inspector-types@0.2.0':
     resolution: {integrity: sha512-uH+TDYkiceiL383fW5xpM9Fw4aH0ZEgejygdZWalOd/v5Tfb1S0lLPkjoYrGGi+9wuZ9wfBBQdJm7NgZBGz/Nw==}
+
+  '@tech-sumit/ai-inspector-types@0.3.0':
+    resolution: {integrity: sha512-CyCGD2rqEVdRCkaiqLW6hwUEp2EzmTL3H3cPGnBCyzefDkHSWR4MylOtMAzj3bZazpNhjwWy9I8UBa6B0f7PtA==}
 
   '@tech-sumit/webmcp-cdp@https://codeload.github.com/tech-sumit/webmcp-cdp/tar.gz/dcc643a5be50a2b598204b6132821ce66df28c35':
     resolution: {tarball: https://codeload.github.com/tech-sumit/webmcp-cdp/tar.gz/dcc643a5be50a2b598204b6132821ce66df28c35}
@@ -1818,6 +1821,8 @@ snapshots:
     optional: true
 
   '@tech-sumit/ai-inspector-types@0.2.0': {}
+
+  '@tech-sumit/ai-inspector-types@0.3.0': {}
 
   '@tech-sumit/webmcp-cdp@https://codeload.github.com/tech-sumit/webmcp-cdp/tar.gz/dcc643a5be50a2b598204b6132821ce66df28c35':
     dependencies:
