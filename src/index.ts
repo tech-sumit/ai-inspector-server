@@ -1,6 +1,7 @@
 export { ToolRegistry } from "./tool-registry.js";
 export { createMcpServer } from "./mcp-server.js";
 export { createHttpServer } from "./http.js";
+export { runStdio } from "./stdio.js";
 export { ExtensionToolSource } from "./sources/extension.js";
 export { PlaywrightBrowserSource } from "./sources/browser.js";
 export { WebMCPMetaSource } from "./sources/webmcp-meta.js";

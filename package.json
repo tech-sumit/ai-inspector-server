@@ -1,12 +1,12 @@
 {
-  "name": "@tech-sumit/ai-inspector-server",
+  "name": "@tech-sumit/mcp-webmcp",
   "version": "0.1.0",
   "description": "MCP server bridging browser WebMCP tools to desktop MCP clients",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "ai-inspector": "./dist/cli.js"
+    "mcp-webmcp": "./dist/cli.js"
   },
   "exports": {
     ".": {
@@ -33,6 +33,7 @@
     "test:watch": "vitest",
     "format": "prettier --write 'src/**/*.ts'",
     "start": "node dist/cli.js start",
+    "start:stdio": "node dist/cli.js",
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
@@ -58,7 +59,7 @@
   "keywords": [
     "mcp",
     "webmcp",
-    "ai-inspector",
+    "mcp-webmcp",
     "chrome-devtools-protocol",
     "tool-bridge"
   ],
@@ -71,6 +72,6 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tech-sumit/ai-inspector-server"
+    "url": "https://github.com/tech-sumit/mcp-webmcp"
   }
 }

@@ -23,7 +23,7 @@ export function createHttpServer(registry: ToolRegistry, port = 3100) {
 
   // Health check
   app.get("/health", (_req, res) => {
-    res.json({ status: "ok", server: "ai-inspector" });
+    res.json({ status: "ok", server: "mcp-webmcp" });
   });
 
   app.all("/mcp", async (req, res) => {
@@ -74,10 +74,10 @@ export function createHttpServer(registry: ToolRegistry, port = 3100) {
       // Store session after the first successful request
       if (newSessionId) {
         sessions.set(newSessionId, transport);
-        console.log(`[AI Inspector] New MCP session: ${newSessionId}`);
+        console.log(`[MCP-WebMCP] New MCP session: ${newSessionId}`);
       }
     } catch (err) {
-      console.error("[AI Inspector] MCP request error:", err);
+      console.error("[MCP-WebMCP] MCP request error:", err);
       if (!res.headersSent) {
         res.status(500).json({ error: "Internal server error" });
       }
@@ -86,10 +86,10 @@ export function createHttpServer(registry: ToolRegistry, port = 3100) {
 
   const server = app.listen(port, () => {
     console.log(
-      `[AI Inspector] HTTP server listening on http://localhost:${port}`,
+      `[MCP-WebMCP] HTTP server listening on http://localhost:${port}`,
     );
     console.log(
-      `[AI Inspector] MCP endpoint: http://localhost:${port}/mcp`,
+      `[MCP-WebMCP] MCP endpoint: http://localhost:${port}/mcp`,
     );
   });
 

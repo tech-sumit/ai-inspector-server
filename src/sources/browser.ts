@@ -316,6 +316,35 @@ const BROWSER_TOOL_DEFS: DiscoveredTool[] = [
     }),
   },
 
+  // --- Browser lifecycle ---
+  {
+    name: "browser_launch",
+    description:
+      "Launch a new browser window. Closes any existing browser first. " +
+      "Uses Playwright to launch a system-installed Chrome/Edge with WebMCP enabled. " +
+      "Supported channels: chrome, chrome-beta, chrome-canary, msedge, msedge-beta, msedge-dev. " +
+      "Works on Mac, Linux, and Windows.",
+    inputSchema: JSON.stringify({
+      type: "object",
+      properties: {
+        channel: {
+          type: "string",
+          description:
+            'Browser channel to launch (default: "chrome-beta"). ' +
+            "Options: chrome, chrome-beta, chrome-canary, msedge, msedge-beta, msedge-dev",
+        },
+        headless: {
+          type: "boolean",
+          description: "Launch in headless mode (default: false)",
+        },
+        url: {
+          type: "string",
+          description: "URL to navigate to after launching",
+        },
+      },
+    }),
+  },
+
   // --- WebMCP page tools (meta-tools) ---
   {
     name: "webmcp_list_tools",
@@ -366,9 +395,17 @@ const BROWSER_TOOL_DEFS: DiscoveredTool[] = [
 /**
  * A ToolSource that provides browser automation tools via Playwright.
  *
- * Connects to an existing Chrome instance using `chromium.connectOverCDP()`
- * and exposes navigation, element interaction, screenshot, tab management,
- * and other browser automation primitives as MCP tools.
+ * Supports two connection modes:
+ * - **CDP mode** (default): Connects to an existing Chrome instance via
+ *   `chromium.connectOverCDP()`. Requires Chrome running with
+ *   `--remote-debugging-port=9222`.
+ * - **Launch mode** (`--launch`): Launches a new browser via
+ *   `chromium.launch({ channel })`. Playwright handles OS-specific
+ *   executable resolution (Mac/Linux/Windows) automatically.
+ *   Injects `--enable-features=WebMCPTesting` so WebMCP is available.
+ *
+ * Additionally, the `browser_launch` tool allows launching a browser
+ * at runtime from an MCP client, even when the server started in CDP mode.
  *
  * Element targeting uses an accessibility-tree snapshot strategy:
  * 1. `browser_snapshot` walks the accessibility tree and assigns ref numbers
@@ -412,16 +449,36 @@ export class PlaywrightBrowserSource implements ToolSource {
   // -------------------------------------------------------------------------
 
   async connect(config: ToolSourceConfig = {}): Promise<void> {
-    const host = config.host ?? "localhost";
-    const port = config.port ?? 9222;
-    const endpoint = `http://${host}:${port}`;
+    if (config.launch) {
+      await this.launchBrowser({
+        channel: config.channel,
+        headless: config.headless,
+        url: config.url,
+      });
+    } else {
+      await this.connectCDP({
+        host: config.host ?? "localhost",
+        port: config.port ?? 9222,
+      });
+    }
+  }
+
+  /**
+   * Connect to an existing Chrome instance via CDP.
+   * Requires Chrome to be running with --remote-debugging-port.
+   */
+  private async connectCDP(opts: {
+    host: string;
+    port: number;
+  }): Promise<void> {
+    const endpoint = `http://${opts.host}:${opts.port}`;
 
     this.browser = await chromium.connectOverCDP(endpoint);
     const contexts = this.browser.contexts();
     if (contexts.length === 0) {
       throw new Error(
         `No browser contexts found at ${endpoint}. Ensure Chrome is running ` +
-          `with --remote-debugging-port=${port} and has at least one tab open.`,
+          `with --remote-debugging-port=${opts.port} and has at least one tab open.`,
       );
     }
     this.context = contexts[0];
@@ -429,12 +486,55 @@ export class PlaywrightBrowserSource implements ToolSource {
     this.page = pages.length > 0 ? pages[0] : await this.context.newPage();
 
     this.setupPageListeners(this.page);
-
-    // --- Chrome version check ---
     await this.checkChromeVersion();
-
-    // --- WebMCP availability check ---
     await this.checkWebMCPAvailability();
+  }
+
+  /**
+   * Launch a new browser instance via Playwright.
+   * Uses the `channel` option to find the system-installed browser
+   * (Playwright handles Mac/Linux/Windows path resolution automatically).
+   * Injects --enable-features=WebMCPTesting so WebMCP is available.
+   */
+  async launchBrowser(opts: {
+    channel?: string;
+    headless?: boolean;
+    url?: string;
+  } = {}): Promise<void> {
+    // Close existing browser if any
+    if (this.browser) {
+      await this.browser.close().catch(() => {});
+      this.browser = null;
+      this.context = null;
+      this.page = null;
+      this.refMap.clear();
+      this.consoleLogs = [];
+      this.networkRequests = [];
+    }
+
+    const channel = opts.channel ?? "chrome-beta";
+    const headless = opts.headless ?? false;
+
+    this.browser = await chromium.launch({
+      channel,
+      headless,
+      args: ["--enable-features=WebMCPTesting"],
+    });
+
+    this.context = this.browser.contexts()[0] ?? await this.browser.newContext();
+    this.page = this.context.pages()[0] ?? await this.context.newPage();
+    this.setupPageListeners(this.page);
+
+    if (opts.url) {
+      await this.page.goto(opts.url, { waitUntil: "domcontentloaded" });
+    }
+
+    await this.checkChromeVersion();
+    await this.checkWebMCPAvailability();
+
+    console.log(
+      `[MCP-WebMCP] Launched browser: channel=${channel}, headless=${headless}`,
+    );
   }
 
   /**
@@ -457,7 +557,7 @@ export class PlaywrightBrowserSource implements ToolSource {
     }
 
     console.log(
-      `[AI Inspector] Chrome version: ${version} (>= ${PlaywrightBrowserSource.MIN_CHROME_VERSION} required)`,
+      `[MCP-WebMCP] Chrome version: ${version} (>= ${PlaywrightBrowserSource.MIN_CHROME_VERSION} required)`,
     );
   }
 
@@ -481,15 +581,15 @@ export class PlaywrightBrowserSource implements ToolSource {
 
     if (this.webmcpAvailable) {
       console.log(
-        "[AI Inspector] WebMCP (navigator.modelContextTesting) is available",
+        "[MCP-WebMCP] WebMCP (navigator.modelContextTesting) is available",
       );
     } else {
       console.warn(
-        "[AI Inspector] WARNING: WebMCP is NOT available. " +
+        "[MCP-WebMCP] WARNING: WebMCP is NOT available. " +
           "navigator.modelContextTesting is undefined.\n" +
-          "[AI Inspector]   Ensure Chrome is launched with: " +
+          "[MCP-WebMCP]   Ensure Chrome is launched with: " +
           "--enable-features=WebMCPTesting\n" +
-          "[AI Inspector]   webmcp_list_tools and webmcp_call_tool will return errors until enabled.",
+          "[MCP-WebMCP]   webmcp_list_tools and webmcp_call_tool will return errors until enabled.",
       );
     }
   }
@@ -515,13 +615,19 @@ export class PlaywrightBrowserSource implements ToolSource {
     name: string,
     inputArguments: string,
   ): Promise<ToolCallResultContent[]> {
-    if (!this.page || !this.context) {
-      throw new Error(
-        "Browser not connected. Call connect() before using browser tools.",
-      );
+    const args = JSON.parse(inputArguments) as Record<string, unknown>;
+
+    // browser_launch can work without an existing connection
+    if (name === "browser_launch") {
+      return this.handleBrowserLaunch(args);
     }
 
-    const args = JSON.parse(inputArguments) as Record<string, unknown>;
+    if (!this.page || !this.context) {
+      throw new Error(
+        "Browser not connected. Use browser_launch to start a browser, " +
+          "or ensure Chrome is running with --remote-debugging-port.",
+      );
+    }
 
     switch (name) {
       // --- Navigation ---
@@ -1161,6 +1267,26 @@ export class PlaywrightBrowserSource implements ToolSource {
 
     await page.waitForTimeout(time!);
     return [{ type: "text", text: `Waited ${time}ms` }];
+  }
+
+  // --- Browser lifecycle ---
+
+  private async handleBrowserLaunch(
+    args: Record<string, unknown>,
+  ): Promise<ToolCallResultContent[]> {
+    const channel = (args.channel as string) ?? "chrome-beta";
+    const headless = (args.headless as boolean) ?? false;
+    const url = args.url as string | undefined;
+
+    await this.launchBrowser({ channel, headless, url });
+
+    const page = this.ensurePage();
+    const parts = [
+      `Launched ${channel} (headless=${headless})`,
+      `URL: ${page.url()}`,
+      `Title: "${await page.title()}"`,
+    ];
+    return [{ type: "text", text: parts.join("\n") }];
   }
 
   // --- WebMCP page tools ---

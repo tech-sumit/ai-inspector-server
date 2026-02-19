@@ -2,11 +2,14 @@ import { writeFile, readFile, mkdir } from "fs/promises";
 import { join, dirname } from "path";
 import { homedir } from "os";
 
+interface McpServerEntry {
+  url?: string;
+  command?: string;
+  args?: string[];
+}
+
 interface McpClientConfig {
-  mcpServers: Record<
-    string,
-    { url?: string; command?: string; args?: string[] }
-  >;
+  mcpServers: Record<string, McpServerEntry>;
 }
 
 const CONFIG_PATHS: Record<string, string> = {
@@ -22,12 +25,9 @@ const CONFIG_PATHS: Record<string, string> = {
 
 /**
  * Write MCP client configuration for the specified client.
- * Adds an "ai-inspector" server entry pointing to the HTTP endpoint.
+ * Adds an "mcp-webmcp" server entry using stdio transport (npx).
  */
-export async function configureMcpClient(
-  client: string,
-  serverUrl = "http://localhost:3100/mcp",
-): Promise<void> {
+export async function configureMcpClient(client: string): Promise<void> {
   const configPath = CONFIG_PATHS[client.toLowerCase()];
   if (!configPath) {
     throw new Error(
@@ -47,9 +47,13 @@ export async function configureMcpClient(
     config.mcpServers = {};
   }
 
-  config.mcpServers["ai-inspector"] = { url: serverUrl };
+  config.mcpServers["mcp-webmcp"] = {
+    command: "npx",
+    args: ["-y", "@tech-sumit/mcp-webmcp"],
+  };
 
   await mkdir(dirname(configPath), { recursive: true });
   await writeFile(configPath, JSON.stringify(config, null, 2) + "\n");
-  console.log(`[AI Inspector] Configured ${client} at ${configPath}`);
+  console.log(`[MCP-WebMCP] Configured ${client} at ${configPath}`);
+  console.log(`[MCP-WebMCP] Entry: npx -y @tech-sumit/mcp-webmcp`);
 }

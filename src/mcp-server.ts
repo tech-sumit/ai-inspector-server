@@ -15,7 +15,7 @@ import type { ToolRegistry } from "./tool-registry.js";
  */
 export function createMcpServer(registry: ToolRegistry): Server {
   const server = new Server(
-    { name: "ai-inspector", version: "1.0.0" },
+    { name: "mcp-webmcp", version: "1.0.0" },
     { capabilities: { tools: { listChanged: true } } },
   );
 

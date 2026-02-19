@@ -1,67 +1,69 @@
-# @tech-sumit/ai-inspector-server
+# @tech-sumit/mcp-webmcp
 
-MCP server that gives AI agents full browser automation and [WebMCP](https://AIdevelopment.blog/web-mcp) tool access. Connects to a running Chrome instance via Playwright and exposes 25 tools over the Model Context Protocol.
+MCP server that gives AI agents full browser automation and [WebMCP](https://AIdevelopment.blog/web-mcp) tool access. Connects to Chrome via Playwright and exposes 26 tools over the Model Context Protocol.
+
+## Quick Start
+
+Add to your MCP client config (`~/.cursor/mcp.json` or Claude Desktop):
+
+```json
+{
+  "mcpServers": {
+    "mcp-webmcp": {
+      "command": "npx",
+      "args": ["-y", "@tech-sumit/mcp-webmcp", "--launch"]
+    }
+  }
+}
+```
+
+That's it. The server launches Chrome Beta with WebMCP enabled, connects via stdio, and exposes 26 browser tools to your AI agent. No manual Chrome launch needed.
 
 ## Architecture
 
 ```mermaid
 graph TD
-    Chrome["Chrome 146+<br/><code>--remote-debugging-port=9222</code><br/><code>--enable-features=WebMCPTesting</code>"]
-
-    subgraph AI Inspector Server
-        PB["PlaywrightBrowserSource<br/>23 browser tools + 2 WebMCP meta-tools"]
-        EXT["ExtensionToolSource<br/>(optional, WebSocket :8765)"]
+    subgraph mcp_webmcp ["MCP-WebMCP Server"]
+        PB["PlaywrightBrowserSource<br/>24 browser tools + 2 WebMCP meta-tools"]
         TR[ToolRegistry]
-        MCP["MCP Server<br/>(per-session)"]
-        HTTP["HTTP /mcp endpoint<br/>:3100"]
+        MCP["MCP Server"]
     end
 
-    Chrome -- "CDP :9222" --> PB
+    subgraph transport ["Transport Layer"]
+        STDIO["stdio<br/>(default, for mcp.json)"]
+        HTTP["HTTP /mcp<br/>:3100 (optional)"]
+    end
+
+    subgraph browser_modes ["Browser Connection"]
+        Launch["--launch<br/>chromium.launch()"]
+        CDP["CDP :9222<br/>connectOverCDP()"]
+    end
+
+    Launch --> PB
+    CDP --> PB
     PB --> TR
-    EXT --> TR
     TR --> MCP
+    MCP --> STDIO
     MCP --> HTTP
 
-    HTTP --> Cursor["Cursor<br/>(via supergateway)"]
-    HTTP --> Claude["Claude Desktop"]
-    HTTP --> Other["Any MCP Client"]
-
-    ExtBrowser["AI Inspector<br/>Chrome Extension"] -. "WebSocket :8765" .-> EXT
+    STDIO --> Cursor["Cursor"]
+    STDIO --> Claude["Claude Desktop"]
+    HTTP --> Any["Any MCP Client"]
 ```
 
-### Tool Flow
+### Connection Modes
 
-```mermaid
-sequenceDiagram
-    participant Agent as MCP Client (AI Agent)
-    participant Server as AI Inspector Server
-    participant PW as Playwright
-    participant Chrome as Chrome Browser
-    participant Page as Web Page
+| Mode | Flag | How it works | When to use |
+|---|---|---|---|
+| **Launch** | `--launch` | Launches a new Chrome window via `chromium.launch()`. Playwright handles OS-specific path resolution (Mac/Linux/Windows). Injects `--enable-features=WebMCPTesting` automatically. | Zero-config setup from mcp.json. No pre-running Chrome needed. |
+| **CDP** | _(default)_ | Connects to an existing Chrome via `chromium.connectOverCDP()`. Requires Chrome running with `--remote-debugging-port=9222`. | When you want to use your existing Chrome with tabs/sessions. |
 
-    Agent->>Server: tools/call browser_snapshot
-    Server->>PW: page.locator("body").ariaSnapshot()
-    PW->>Chrome: CDP command
-    Chrome-->>PW: Accessibility tree
-    PW-->>Server: ARIA snapshot text
-    Server-->>Agent: Annotated tree with [ref=N]
+### Transport Modes
 
-    Agent->>Server: tools/call browser_click {ref: 5}
-    Server->>PW: locator.click()
-    PW->>Chrome: Click element
-    Chrome->>Page: DOM click event
-    Page-->>Chrome: Updated DOM
-    Chrome-->>PW: Action complete
-    PW-->>Server: Success
-    Server-->>Agent: "Clicked button [ref=5]"
-
-    Agent->>Server: tools/call webmcp_list_tools
-    Server->>PW: page.evaluate(navigator.modelContextTesting.listTools())
-    PW->>Page: Execute in page context
-    Page-->>PW: Tool definitions
-    PW-->>Server: Tool list JSON
-    Server-->>Agent: Available WebMCP tools
-```
+| Transport | How to use | When to use |
+|---|---|---|
+| **stdio** | Run `mcp-webmcp` (no subcommand) | For mcp.json / npx. Client spawns process, communicates via stdin/stdout. |
+| **HTTP** | Run `mcp-webmcp start` | For hosted/manual usage. Streamable HTTP on `/mcp` endpoint. |
 
 ## Prerequisites
 
@@ -69,7 +71,6 @@ sequenceDiagram
 |---|---|
 | **Node.js** | v18+ |
 | **Chrome** | Version **146+** (Beta or Canary). Stable Chrome will not work until WebMCP ships. |
-| **Playwright browsers** | Installed via `npx playwright install chromium` (only needed once) |
 
 ### Checking your Chrome version
 
@@ -82,41 +83,80 @@ sequenceDiagram
 
 # Linux
 google-chrome-beta --version
+
+# Windows
+"C:\Program Files\Google\Chrome Beta\Application\chrome.exe" --version
 ```
 
 The server validates Chrome >= 146 on startup and will throw a clear error if the version is too old.
 
 ## Setup
 
-### Setup Overview
+### Option A: Launch mode (recommended)
 
-```mermaid
-graph LR
-    A["1. Launch Chrome<br/>with flags"] --> B["2. Start AI Inspector<br/>Server"]
-    B --> C["3. Configure MCP<br/>Client"]
-    C --> D["Agent uses<br/>25 tools"]
+The server launches its own Chrome instance. No manual Chrome setup needed.
 
-    style A fill:#e1f5fe
-    style B fill:#e8f5e9
-    style C fill:#fff3e0
-    style D fill:#f3e5f5
+#### Cursor
+
+Add to `~/.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "mcp-webmcp": {
+      "command": "npx",
+      "args": ["-y", "@tech-sumit/mcp-webmcp", "--launch"]
+    }
+  }
+}
 ```
 
-### 1. Launch Chrome with remote debugging and WebMCP
+Or for local development:
 
-Chrome must be started with two flags:
+```json
+{
+  "mcpServers": {
+    "mcp-webmcp": {
+      "command": "node",
+      "args": ["/path/to/dist/cli.js", "--launch"]
+    }
+  }
+}
+```
 
-- `--remote-debugging-port=9222` — allows Playwright to connect
-- `--enable-features=WebMCPTesting` — enables `navigator.modelContextTesting` for WebMCP tools
+#### Claude Desktop
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "mcp-webmcp": {
+      "command": "npx",
+      "args": ["-y", "@tech-sumit/mcp-webmcp", "--launch"]
+    }
+  }
+}
+```
+
+#### Launch options
+
+| Flag | Description | Default |
+|---|---|---|
+| `--launch` | Enable launch mode | _(off, uses CDP)_ |
+| `--channel <ch>` | Browser channel: `chrome`, `chrome-beta`, `chrome-canary`, `msedge`, `msedge-beta`, `msedge-dev` | `chrome-beta` |
+| `--headless` | Run browser in headless mode | `false` |
+| `--url <url>` | Navigate to URL after launch | _(none)_ |
+
+### Option B: CDP mode (connect to existing Chrome)
+
+Attach to an existing Chrome instance with remote debugging enabled.
+
+#### 1. Launch Chrome with flags
 
 ```bash
 # macOS — Chrome Beta
 /Applications/Google\ Chrome\ Beta.app/Contents/MacOS/Google\ Chrome\ Beta \
-  --remote-debugging-port=9222 \
-  --enable-features=WebMCPTesting
-
-# macOS — Chrome Canary
-/Applications/Google\ Chrome\ Canary.app/Contents/MacOS/Google\ Chrome\ Canary \
   --remote-debugging-port=9222 \
   --enable-features=WebMCPTesting
 
@@ -133,146 +173,73 @@ google-chrome-beta \
 
 > **Tip:** Close all existing Chrome windows before running this command, or Chrome will connect to the existing instance which may not have the flags enabled.
 
-Verify Chrome is listening:
-
-```bash
-curl http://localhost:9222/json/version
-```
-
-You should see a JSON response with `"Browser": "Chrome/146.x.x.x"`.
-
-### 2. Install and start the server
-
-```bash
-# From the monorepo
-cd projects/webmcp/ai-inspector-server
-pnpm install
-pnpm build
-pnpm start
-
-# Or run directly
-node dist/cli.js start
-```
-
-On successful startup you'll see:
-
-```
-[AI Inspector] Chrome version: 146.0.7680.0 (>= 146 required)
-[AI Inspector] WebMCP (navigator.modelContextTesting) is available
-[AI Inspector] Browser tools enabled: 25 tools via Playwright
-[AI Inspector] HTTP server listening on http://localhost:3100
-[AI Inspector] MCP endpoint: http://localhost:3100/mcp
-```
-
-#### Startup Checks
-
-```mermaid
-flowchart TD
-    Start([Server Start]) --> ConnectCDP["Connect to Chrome via CDP :9222"]
-    ConnectCDP --> CheckVer{"Chrome version<br/>≥ 146?"}
-    CheckVer -- No --> ErrVer["<b>Hard Error</b><br/>Server will not start<br/><i>Install Chrome Beta/Canary</i>"]
-    CheckVer -- Yes --> CheckMCP{"WebMCP enabled?<br/><code>navigator.modelContextTesting</code>"}
-    CheckMCP -- No --> WarnMCP["<b>Warning</b><br/>Server starts without WebMCP<br/><i>webmcp_list_tools / webmcp_call_tool</i><br/><i>will return errors</i>"]
-    CheckMCP -- Yes --> Ready(["Server Ready<br/>25 tools available"])
-    WarnMCP --> ReadyPartial(["Server Ready<br/>23 browser tools only"])
-
-    style ErrVer fill:#ffcdd2
-    style WarnMCP fill:#fff9c4
-    style Ready fill:#c8e6c9
-    style ReadyPartial fill:#fff9c4
-```
-
-### 3. Connect your MCP client
-
-#### Client Connection Options
-
-```mermaid
-graph LR
-    Server["AI Inspector<br/>HTTP :3100/mcp"]
-
-    Server -- "Streamable HTTP" --> Cursor["Cursor"]
-    Server -- "Streamable HTTP" --> Claude["Claude Desktop"]
-    Server -- "Streamable HTTP" --> Any["Any MCP Client"]
-```
-
-All clients connect via **Streamable HTTP** — no bridges or adapters needed.
-
-#### Cursor
-
-```bash
-ai-inspector config cursor
-```
-
-Or manually add to `~/.cursor/mcp.json`:
+#### 2. Configure MCP client
 
 ```json
 {
   "mcpServers": {
-    "ai-inspector": {
-      "url": "http://localhost:3100/mcp"
+    "mcp-webmcp": {
+      "command": "npx",
+      "args": ["-y", "@tech-sumit/mcp-webmcp"]
     }
   }
 }
 ```
 
-Then restart Cursor or toggle the MCP server off/on in Cursor Settings > MCP.
+#### CDP options
 
-#### Claude Desktop
+| Flag | Description | Default |
+|---|---|---|
+| `--cdp-host <host>` | Chrome debugging host | `localhost` |
+| `--cdp-port <port>` | Chrome debugging port | `9222` |
+
+### Option C: HTTP transport (hosted server)
+
+For manual or hosted usage, run the server as an HTTP endpoint:
 
 ```bash
-ai-inspector config claude
+mcp-webmcp start [--launch] [--port 3100]
 ```
 
-Or manually add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+Connect your MCP client to `http://localhost:3100/mcp`.
 
-```json
-{
-  "mcpServers": {
-    "ai-inspector": {
-      "url": "http://localhost:3100/mcp"
-    }
-  }
-}
+### Auto-configure
+
+```bash
+mcp-webmcp config cursor   # writes ~/.cursor/mcp.json
+mcp-webmcp config claude    # writes Claude Desktop config
 ```
 
-#### Any MCP client
-
-Point your client to:
-
-```
-http://localhost:3100/mcp
-```
-
-The server supports the MCP Streamable HTTP transport with per-session state.
-
-## Available Tools (25)
+## Available Tools (26)
 
 ### Tool Categories
 
 ```mermaid
 graph TD
-    subgraph "Browser Automation (23 tools)"
+    subgraph browser_auto ["Browser Automation (24 tools)"]
         direction LR
-        Nav["Navigation<br/><code>navigate</code> <code>back</code> <code>forward</code> <code>reload</code>"]
-        State["Page State<br/><code>url</code> <code>snapshot</code> <code>screenshot</code><br/><code>console_logs</code> <code>network_requests</code>"]
-        Interact["Interaction<br/><code>click</code> <code>type</code> <code>fill</code> <code>hover</code><br/><code>select_option</code> <code>press_key</code> <code>focus</code>"]
-        Scroll["Scrolling<br/><code>scroll</code>"]
-        Tabs["Tab Management<br/><code>tab_list</code> <code>tab_new</code><br/><code>tab_select</code> <code>tab_close</code>"]
-        JS["JavaScript<br/><code>evaluate</code>"]
-        Wait["Wait<br/><code>wait</code>"]
+        Nav["Navigation<br/>navigate, back, forward, reload"]
+        State["Page State<br/>url, snapshot, screenshot<br/>console_logs, network_requests"]
+        Interact["Interaction<br/>click, type, fill, hover<br/>select_option, press_key, focus"]
+        Scroll["Scrolling<br/>scroll"]
+        Tabs["Tab Management<br/>tab_list, tab_new<br/>tab_select, tab_close"]
+        JS["JavaScript<br/>evaluate"]
+        Wait["Wait<br/>wait"]
+        Lifecycle["Lifecycle<br/>launch"]
     end
 
-    subgraph "WebMCP Meta-Tools (2 tools)"
+    subgraph webmcp_meta ["WebMCP Meta-Tools (2 tools)"]
         direction LR
-        List["<code>webmcp_list_tools</code><br/>Discover page tools"]
-        Call["<code>webmcp_call_tool</code><br/>Execute page tools"]
+        List["webmcp_list_tools<br/>Discover page tools"]
+        Call["webmcp_call_tool<br/>Execute page tools"]
     end
 ```
 
-### Browser Automation (23 tools)
+### Browser Automation (24 tools)
 
 | Tool | Description |
 |---|---|
+| `browser_launch` | Launch a new browser window (closes existing). Supported channels: chrome, chrome-beta, chrome-canary, msedge. Cross-platform. |
 | `browser_navigate` | Navigate to a URL |
 | `browser_back` | Go back in history |
 | `browser_forward` | Go forward in history |
@@ -317,159 +284,119 @@ sequenceDiagram
     Agent->>Server: browser_snapshot
     Server->>Page: ariaSnapshot()
     Page-->>Server: Accessibility tree
-    Note over Server: Assigns [ref=N] to each element<br/>Stores role + name + nth mapping
+    Note over Server: Assigns [ref=N] to each element
     Server-->>Agent: Annotated snapshot
 
-    Note over Agent: Agent reads snapshot,<br/>picks ref=5 for "Submit" button
+    Note over Agent: Picks ref=5 for Submit button
 
     Agent->>Server: browser_click {ref: 5}
-    Note over Server: Resolves ref=5 → getByRole("button", {name: "Submit"}).nth(0)
+    Note over Server: Resolves ref=5 via getByRole().nth()
     Server->>Page: Click resolved locator
     Page-->>Server: Done
-    Server-->>Agent: "Clicked button 'Submit' [ref=5]"
+    Server-->>Agent: Clicked button Submit ref=5
 ```
 
 ## CLI Reference
 
-### `ai-inspector start`
+### `mcp-webmcp` (default — stdio mode)
 
-Start the MCP server.
+Run as stdio MCP server. This is what `mcp.json` invokes.
 
 ```bash
-ai-inspector start [options]
+mcp-webmcp [options]
 ```
 
 | Option | Description | Default |
 |---|---|---|
-| `--cdp-host <host>` | Chrome debugging host | `localhost` |
-| `--cdp-port <port>` | Chrome debugging port | `9222` |
-| `--port <port>` | HTTP server port | `3100` |
+| `--launch` | Launch a new browser instead of connecting via CDP | `false` |
+| `--channel <ch>` | Browser channel for `--launch` | `chrome-beta` |
+| `--headless` | Launch in headless mode | `false` |
+| `--url <url>` | Initial URL to open | _(none)_ |
+| `--cdp-host <host>` | CDP host (when not using `--launch`) | `localhost` |
+| `--cdp-port <port>` | CDP port (when not using `--launch`) | `9222` |
 | `--extension` | Enable Chrome extension WebSocket bridge | `false` |
 | `--ws-port <port>` | Extension WebSocket port | `8765` |
-| `--no-browser-tools` | Disable Playwright browser automation | `false` |
+| `--no-browser-tools` | Disable Playwright browser tools | `false` |
 
-### `ai-inspector list-tools`
+### `mcp-webmcp start` (HTTP mode)
+
+Start the MCP server over HTTP.
+
+```bash
+mcp-webmcp start [options]
+```
+
+Same options as stdio mode, plus:
+
+| Option | Description | Default |
+|---|---|---|
+| `--port <port>` | HTTP server port | `3100` |
+
+### `mcp-webmcp list-tools`
 
 List all WebMCP tools from connected browser tabs (uses CDP directly).
 
 ```bash
-ai-inspector list-tools [--host localhost] [--port 9222]
+mcp-webmcp list-tools [--host localhost] [--port 9222]
 ```
 
-### `ai-inspector call-tool <name> [args]`
+### `mcp-webmcp call-tool <name> [args]`
 
 Execute a WebMCP tool by name.
 
 ```bash
-ai-inspector call-tool searchFlights '{"from":"SFO","to":"JFK"}'
+mcp-webmcp call-tool searchFlights '{"from":"SFO","to":"JFK"}'
 ```
 
-### `ai-inspector config <client>`
+### `mcp-webmcp config <client>`
 
-Write MCP client configuration.
+Write MCP client configuration (stdio-based).
 
 ```bash
-ai-inspector config cursor   # writes ~/.cursor/mcp.json
-ai-inspector config claude    # writes Claude Desktop config
+mcp-webmcp config cursor   # writes ~/.cursor/mcp.json
+mcp-webmcp config claude    # writes Claude Desktop config
 ```
 
-## Example: End-to-End Demo
+## Demo: Booking a Table via WebMCP
 
-### Setup Terminals
-
-```mermaid
-gantt
-    title Terminal Setup
-    dateFormat X
-    axisFormat %s
-
-    section Terminal 1
-    Launch Chrome with flags       :a1, 0, 5
-
-    section Terminal 2
-    Start WebMCP demo app (port 4200) :a2, 2, 7
-
-    section Terminal 3
-    Start AI Inspector server      :a3, 4, 9
-
-    section Terminal 4
-    Open demo in Chrome tab        :a4, 6, 8
-```
-
-```bash
-# Terminal 1 — Launch Chrome
-/Applications/Google\ Chrome\ Beta.app/Contents/MacOS/Google\ Chrome\ Beta \
-  --remote-debugging-port=9222 \
-  --enable-features=WebMCPTesting
-
-# Terminal 2 — Start a WebMCP demo app
-cd projects/webmcp/library/demos/french-bistro
-pnpm dev --port 4200
-
-# Terminal 3 — Start the AI Inspector server
-cd projects/webmcp/ai-inspector-server
-pnpm start
-
-# Terminal 4 — Navigate Chrome to the demo
-curl -X PUT "http://localhost:9222/json/new?http://localhost:4200"
-```
+This demo shows the full flow: an AI agent uses `browser_launch` to open Chrome, navigates to a WebMCP-enabled restaurant page, discovers the `book_table_le_petit_bistro` tool, and books a table — all via MCP.
 
 ### Agent Workflow
 
 ```mermaid
 sequenceDiagram
     participant Agent as AI Agent (Cursor)
-    participant MCP as AI Inspector
-    participant Chrome as Chrome + Demo Page
+    participant MCP as MCP-WebMCP
+    participant Chrome as Chrome Browser
+    participant Page as Le Petit Bistro
 
-    Agent->>MCP: browser_navigate {url: "http://localhost:4200"}
-    MCP->>Chrome: Navigate
+    Agent->>MCP: browser_launch {channel: "chrome-beta"}
+    MCP->>Chrome: chromium.launch()
+    Chrome-->>MCP: Browser ready
+    MCP-->>Agent: "Launched chrome-beta"
+
+    Agent->>MCP: browser_navigate {url: "localhost:5173"}
+    MCP->>Chrome: page.goto()
     Chrome-->>MCP: Page loaded
-    MCP-->>Agent: "Navigated to localhost:4200"
+    MCP-->>Agent: "Le Petit Bistro"
 
     Agent->>MCP: webmcp_list_tools
-    MCP->>Chrome: navigator.modelContextTesting.listTools()
-    Chrome-->>MCP: [{name: "book_table_le_petit_bistro", ...}]
-    MCP-->>Agent: Tool definitions with input schemas
+    MCP->>Page: navigator.modelContextTesting.listTools()
+    Page-->>MCP: [{name: "book_table_le_petit_bistro", ...}]
+    MCP-->>Agent: Tool schema with inputs
 
-    Agent->>MCP: webmcp_call_tool {name: "book_table_le_petit_bistro", arguments: {...}}
-    MCP->>Chrome: navigator.modelContextTesting.executeTool(...)
-    Chrome-->>MCP: Form filled and submitted
-    MCP-->>Agent: Reservation confirmed
-
-    Agent->>MCP: browser_snapshot
-    MCP->>Chrome: ariaSnapshot()
-    Chrome-->>MCP: Accessibility tree
-    MCP-->>Agent: Confirmation modal visible
+    Agent->>MCP: webmcp_call_tool {name: "book_table_le_petit_bistro", ...}
+    MCP->>Page: navigator.modelContextTesting.executeTool(...)
+    Page-->>MCP: "Reservation confirmed"
+    MCP-->>Agent: "Hello Sumit, We look forward to welcoming you..."
 ```
 
-## Session Management
+### What happens
 
-```mermaid
-sequenceDiagram
-    participant Client as MCP Client (Cursor / Claude)
-    participant Server as AI Inspector HTTP :3100
-
-    Client->>Server: POST /mcp {method: "initialize"}
-    Note over Server: Creates new session<br/>UUID + Transport + MCP Server
-    Server-->>Client: {sessionId: "abc-123", capabilities: {...}}
-
-    Client->>Server: POST /mcp {method: "tools/list"}<br/>Header: mcp-session-id: abc-123
-    Server-->>Client: {tools: [...25 tools]}
-
-    Client->>Server: POST /mcp {method: "tools/call", name: "browser_snapshot"}<br/>Header: mcp-session-id: abc-123
-    Server-->>Client: {content: [{type: "text", text: "...accessibility tree..."}]}
-
-    Note over Client, Server: On server restart, old session is invalid
-
-    Client->>Server: POST /mcp {method: "tools/list"}<br/>Header: mcp-session-id: abc-123
-    Note over Server: Session "abc-123" not found,<br/>not an initialize request
-    Server-->>Client: 404 "Session not found"
-    Note over Client: Reconnects automatically
-    Client->>Server: POST /mcp {method: "initialize"}
-    Note over Server: Creates new session
-    Server-->>Client: {sessionId: "def-456"}
-```
+1. **`browser_launch`** opens Chrome Beta with `--enable-features=WebMCPTesting`
+2. **`browser_navigate`** loads the Le Petit Bistro reservation form
+3. **`webmcp_list_tools`** discovers `book_table_le_petit_bistro` and its full input schema (name, phone, date, time, guests, seating, requests)
+4. **`webmcp_call_tool`** books the table — the form auto-fills and a confirmation modal appears: *"Reservation Received — Bon Appetit!"*
 
 ## Troubleshooting
 
@@ -477,24 +404,21 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    Problem([Something went wrong]) --> Q1{"Can you reach Chrome?<br/><code>curl localhost:9222/json/version</code>"}
-    Q1 -- No --> F1["Launch Chrome with<br/><code>--remote-debugging-port=9222</code>"]
-    Q1 -- Yes --> Q2{"Chrome version ≥ 146?"}
-    Q2 -- No --> F2["Install Chrome Beta/Canary<br/>chrome.google.com/beta"]
+    Problem(["Something went wrong"]) --> Q0{"Using --launch mode?"}
+    Q0 -- Yes --> Q0a{"Chrome Beta/Canary<br/>installed?"}
+    Q0a -- No --> F0["Install Chrome Beta<br/>chrome.google.com/beta"]
+    Q0a -- Yes --> Q3
+    Q0 -- No --> Q1{"Can you reach Chrome?<br/>curl localhost:9222/json/version"}
+    Q1 -- No --> F1["Launch Chrome with<br/>--remote-debugging-port=9222"]
+    Q1 -- Yes --> Q2{"Chrome version >= 146?"}
+    Q2 -- No --> F2["Install Chrome Beta/Canary"]
     Q2 -- Yes --> Q3{"Server starts?"}
-    Q3 -- No --> F3["Check port 3100 is free<br/><code>lsof -ti:3100</code>"]
+    Q3 -- No --> F3["Check error message in stderr"]
     Q3 -- Yes --> Q4{"MCP client connects?"}
     Q4 -- No --> F4["Check mcp.json config<br/>Toggle MCP off/on"]
     Q4 -- Yes --> Q5{"WebMCP tools work?"}
-    Q5 -- No --> F5["Relaunch Chrome with<br/><code>--enable-features=WebMCPTesting</code>"]
+    Q5 -- No --> F5["Ensure --enable-features=WebMCPTesting<br/>(--launch adds it automatically)"]
     Q5 -- Yes --> OK(["Everything working"])
-
-    style F1 fill:#ffcdd2
-    style F2 fill:#ffcdd2
-    style F3 fill:#ffcdd2
-    style F4 fill:#ffcdd2
-    style F5 fill:#ffcdd2
-    style OK fill:#c8e6c9
 ```
 
 ### Common Issues
@@ -507,23 +431,23 @@ Your Chrome is older than 146. Install Chrome Beta or Canary:
 
 #### "WebMCP is NOT available"
 
-Chrome was not launched with `--enable-features=WebMCPTesting`. Close all Chrome windows and relaunch with the flag.
+Chrome was not launched with `--enable-features=WebMCPTesting`. If using CDP mode, close all Chrome windows and relaunch with the flag. Launch mode (`--launch`) adds this flag automatically.
 
 #### "No browser contexts found"
 
-Chrome is not running with `--remote-debugging-port=9222`, or it has no tabs open. Verify with:
+Chrome is not running with `--remote-debugging-port=9222`, or it has no tabs open. Use `--launch` mode instead, or verify with:
 
 ```bash
 curl http://localhost:9222/json/version
 ```
 
-#### "Server not initialized" errors in MCP client
+#### "Target page, context or browser has been closed"
 
-This happens when the MCP client tries to reuse a stale session after the server restarts. Toggle the MCP server off and on in your client settings, or restart the client.
+The browser connection was lost. Use `browser_launch` tool to start a new browser, or restart the MCP server.
 
 #### Screenshot timeouts
 
-Playwright waits for web fonts to load before taking screenshots. The server uses a 10-second timeout to avoid hanging. If screenshots still time out on slow connections, the page will be captured as-is after the timeout.
+Playwright waits for web fonts to load before taking screenshots. The server uses a 10-second timeout to avoid hanging.
 
 #### Click fails on modal/overlay elements
 
@@ -535,7 +459,8 @@ Elements in `position: fixed` overlays may not be scrollable into view. The serv
 pnpm install           # install dependencies
 pnpm build             # compile with tsup → dist/
 pnpm dev               # watch mode
-pnpm start             # run the server
+pnpm start             # run HTTP server (CDP mode)
+pnpm start:stdio       # run stdio server
 pnpm typecheck         # tsc --noEmit
 pnpm lint              # eslint
 pnpm test              # vitest

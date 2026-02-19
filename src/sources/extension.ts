@@ -9,7 +9,7 @@ import type {
 } from "@tech-sumit/ai-inspector-types";
 
 /**
- * ToolSource that receives tools from the AI Inspector Chrome extension
+ * ToolSource that receives tools from the WebMCP Debugger Chrome extension
  * via a WebSocket connection. The extension background service worker
  * connects to this server and pushes tool updates / results.
  */

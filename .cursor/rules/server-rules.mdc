@@ -1,9 +1,9 @@
 ---
-description: Rules for ai-inspector-server package
+description: Rules for mcp-webmcp package
 globs: ["**/*.ts"]
 ---
 
-# ai-inspector-server Rules
+# mcp-webmcp Rules
 
 - ToolRegistry is the central aggregation point. All tool sources register through it.
 - MCP server must JSON.parse DOMString inputSchema before sending to MCP clients.
@@ -11,6 +11,6 @@ globs: ["**/*.ts"]
 - ExtensionToolSource uses WebSocket server to accept connections from the extension.
 - CdpToolSource is imported from @tech-sumit/webmcp-cdp.
 - HTTP transport uses StreamableHTTPServerTransport on /mcp endpoint.
-- CLI uses commander. All commands are subcommands of `ai-inspector`.
+- CLI uses commander. All commands are subcommands of `mcp-webmcp`.
 - The server must handle graceful shutdown (SIGINT, SIGTERM).
 - Tests mock the ToolSource interface, not the actual sources.
