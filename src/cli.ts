@@ -78,7 +78,7 @@ async function setupRegistry(opts: {
 const program = new Command()
   .name("mcp-webmcp")
   .description("Bridge browser WebMCP tools to MCP clients")
-  .version("0.1.0");
+  .version("0.1.1");
 
 // ── Default command: stdio mode (for mcp.json / npx usage) ──────────────────
 program

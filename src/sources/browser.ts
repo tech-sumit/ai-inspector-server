@@ -624,8 +624,7 @@ export class PlaywrightBrowserSource implements ToolSource {
 
     if (!this.page || !this.context) {
       throw new Error(
-        "Browser not connected. Use browser_launch to start a browser, " +
-          "or ensure Chrome is running with --remote-debugging-port.",
+        "Browser not connected. Use the browser_launch tool to start a browser.",
       );
     }
 
