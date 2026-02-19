@@ -39,27 +39,28 @@ async function setupRegistry(opts: {
   const registry = new ToolRegistry();
 
   if (opts.browserTools !== false) {
-    try {
-      const browserSource = new PlaywrightBrowserSource();
-      await browserSource.connect({
-        launch: opts.launch,
-        channel: opts.channel,
-        headless: opts.headless,
-        url: opts.url,
-        host: opts.cdpHost,
-        port: opts.cdpPort,
-      });
-      registry.addTools(browserSource, browserSource.listTools());
+    const browserSource = new PlaywrightBrowserSource();
+    registry.addTools(browserSource, browserSource.listTools());
 
+    if (opts.launch) {
+      try {
+        await browserSource.connect({
+          launch: true,
+          channel: opts.channel,
+          headless: opts.headless,
+          url: opts.url,
+        });
+        console.log(
+          `[MCP-WebMCP] Browser launched (${opts.channel ?? "chrome-beta"}): ${browserSource.listTools().length} tools available`,
+        );
+      } catch (err) {
+        console.warn(
+          `[MCP-WebMCP] Browser launch failed: ${err instanceof Error ? err.message : err}`,
+        );
+      }
+    } else {
       console.log(
-        `[MCP-WebMCP] Browser tools enabled: ${browserSource.listTools().length} tools via Playwright`,
-      );
-    } catch (err) {
-      console.warn(
-        `[MCP-WebMCP] Browser tools failed to connect: ${err instanceof Error ? err.message : err}`,
-      );
-      console.warn(
-        "[MCP-WebMCP] Running without browser tools. Use --no-browser-tools to suppress this.",
+        `[MCP-WebMCP] ${browserSource.listTools().length} browser tools registered. Use browser_launch tool to start a browser.`,
       );
     }
   }
