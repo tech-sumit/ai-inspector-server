@@ -1,6 +1,6 @@
 {
   "name": "@tech-sumit/mcp-webmcp",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "MCP server bridging browser WebMCP tools to desktop MCP clients",
   "type": "module",
   "main": "./dist/index.js",
@@ -38,7 +38,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "@tech-sumit/ai-inspector-types": "^0.3.0",
+    "@tech-sumit/ai-inspector-types": "github:tech-sumit/ai-inspector-types",
     "@tech-sumit/webmcp-cdp": "github:tech-sumit/webmcp-cdp",
     "commander": "^13.0.0",
     "express": "^5.1.0",
@@ -65,6 +65,7 @@
   ],
   "pnpm": {
     "onlyBuiltDependencies": [
+      "@tech-sumit/ai-inspector-types",
       "@tech-sumit/webmcp-cdp",
       "esbuild"
     ]

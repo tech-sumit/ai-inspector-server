@@ -31,6 +31,9 @@ export function createMcpServer(registry: ToolRegistry): Server {
         name: t.name,
         description: t.description,
         inputSchema,
+        ...(t.readOnlyHint != null && {
+          annotations: { readOnlyHint: t.readOnlyHint },
+        }),
       };
     }),
   }));
