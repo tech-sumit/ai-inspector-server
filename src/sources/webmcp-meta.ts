@@ -86,7 +86,7 @@ export class WebMCPMetaSource implements ToolSource {
   ): Promise<ToolCallResultContent[]> {
     if (name === "webmcp_list_tools") {
       const tools = this.inner.listTools();
-      const summary = tools.map((t) => ({
+      const summary = tools.map((t: DiscoveredTool) => ({
         name: t.name,
         description: t.description,
         inputSchema: JSON.parse(t.inputSchema),
