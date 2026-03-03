@@ -38,7 +38,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "@tech-sumit/ai-inspector-types": "github:tech-sumit/ai-inspector-types",
+    "@tech-sumit/ai-inspector-types": "^0.4.0",
     "@tech-sumit/webmcp-cdp": "github:tech-sumit/webmcp-cdp",
     "commander": "^13.0.0",
     "express": "^5.1.0",
