@@ -1,9 +1,10 @@
 # Changelog
 
-## 0.2.0 (2026-02-17)
+## 0.2.0 (2026-03-04)
 
 ### Features
 
+- **`readOnlyHint` forwarded as MCP annotations**: When a discovered tool has `readOnlyHint` set (per the spec's formalized tool definition struct), the MCP server now includes it as `annotations: { readOnlyHint }` in the `tools/list` response, so MCP clients can leverage the hint
 - **Playwright browser automation**: New `PlaywrightBrowserSource` providing 25 tools via Playwright connected over CDP
   - 23 browser automation tools: navigation (`navigate`, `back`, `forward`, `reload`), page state (`url`, `snapshot`, `screenshot`, `console_logs`, `network_requests`), element interaction (`click`, `type`, `fill`, `hover`, `select_option`, `press_key`, `focus`), scrolling (`scroll`), tab management (`tab_list`, `tab_new`, `tab_select`, `tab_close`), JavaScript execution (`evaluate`), and waiting (`wait`)
   - 2 WebMCP meta-tools: `webmcp_list_tools` and `webmcp_call_tool` for dynamic page tool discovery and execution via `navigator.modelContextTesting`
@@ -15,6 +16,10 @@
 - **WebMCP availability check**: Probes `navigator.modelContextTesting` on startup; warns if not enabled
 - **Stale session handling**: Non-initialize requests with unknown session IDs return HTTP 404 with a clear re-initialize message
 - **Rich tool results**: `ToolRegistry.callTool()` and MCP `CallToolRequestSchema` handler now support `ToolCallResultContent[]` (text + image blocks)
+
+### Spec alignment
+
+- Tool listing now maps the WebMCP spec's `readOnlyHint` (a top-level field on the tool definition struct) to MCP's `annotations.readOnlyHint`, bridging the two protocols
 
 ### Bug fixes
 
